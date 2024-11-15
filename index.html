@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase Auth</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(120deg, #a6c0fe, #f68084);
+      color: #333;
+    }
+    h1 {
+      margin-top: 20px;
+      font-size: 28px;
+      color: #fff;
+    }
+    .form-container {
+      width: 300px;
+      margin: auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    input {
+      width: 90%;
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      width: 95%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      background: #007bff;
+      color: #fff;
+      font-size: 16px;
+      border-radius: 5px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #google-signin {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      color: #333;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      padding: 10px;
+      margin: 10px auto;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #google-signin img {
+      width: 20px;
+      margin-right: 8px;
+    }
+    #success-popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 255, 0, 0.9);
+      color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      z-index: 1000;
+      font-size: 18px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>TRENDY JITESH MOVIES</h1>
+
+  <div id="success-popup">Login Successful!</div>
+
+  <div class="form-container" id="login-form">
+    <h2>Login</h2>
+    <input type="email" id="login-email" placeholder="Email" required />
+    <input type="password" id="login-password" placeholder="Password" required />
+    <button onclick="login()">Login</button>
+    <div id="google-signin" onclick="googleSignIn()">
+      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQ901eAwCHJkZ_K-vjQz9vX-WNgASX8gisXw&s" alt="Google Logo" />
+      Sign in with Google
+    </div>
+    <p><a href="#" onclick="showResetForm()">Forgot Password?</a></p>
+    <p><a href="#" onclick="showSignupForm()">Create an account</a></p>
+  </div>
+
+  <div class="form-container" id="signup-form" style="display:none;">
+    <h2>Sign Up</h2>
+    <input type="text" id="signup-name" placeholder="Name" required />
+    <input type="email" id="signup-email" placeholder="Email" required />
+    <input type="password" id="signup-password" placeholder="Password" required />
+    <button onclick="signup()">Sign Up</button>
+    <p><a href="#" onclick="showLoginForm()">Back to Login</a></p>
+  </div>
+
+  <div class="form-container" id="reset-form" style="display:none;">
+    <h2>Reset Password</h2>
+    <input type="email" id="reset-email" placeholder="Email" required />
+    <button onclick="resetPassword()">Reset Password</button>
+    <p><a href="#" onclick="showLoginForm()">Back to Login</a></p>
+  </div>
+
+  <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDjpOIMn2Y7MHRj3UbqsxHpez-LJe0LJTQ",
+      authDomain: "trendy-movies-b6b72.firebaseapp.com",
+      projectId: "trendy-movies-b6b72",
+      storageBucket: "trendy-movies-b6b72.firebasestorage.app",
+      messagingSenderId: "863668326096",
+      appId: "1:863668326096:web:15f2d36e55534bef2ed8d5",
+      measurementId: "G-FNR1T6TZRB",
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    const auth = firebase.auth();
+
+    function showLoginForm() {
+      document.getElementById("login-form").style.display = "block";
+      document.getElementById("signup-form").style.display = "none";
+      document.getElementById("reset-form").style.display = "none";
+    }
+
+    function showSignupForm() {
+      document.getElementById("signup-form").style.display = "block";
+      document.getElementById("login-form").style.display = "none";
+      document.getElementById("reset-form").style.display = "none";
+    }
+
+    function showResetForm() {
+      document.getElementById("reset-form").style.display = "block";
+      document.getElementById("login-form").style.display = "none";
+      document.getElementById("signup-form").style.display = "none";
+    }
+
+    function signup() {
+      const name = document.getElementById("signup-name").value;
+      const email = document.getElementById("signup-email").value;
+      const password = document.getElementById("signup-password").value;
+
+      auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          userCredential.user.updateProfile({ displayName: name });
+          userCredential.user.sendEmailVerification();
+          alert("Verification email sent. Please verify before logging in.");
+          showLoginForm();
+        })
+        .catch((error) => alert(error.message));
+    }
+
+    function login() {
+      const email = document.getElementById("login-email").value;
+      const password = document.getElementById("login-password").value;
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          if (userCredential.user.emailVerified) {
+            showSuccessPopup();
+            setTimeout(() => {
+              window.location.href = "https://akgamer737.github.io/Movie/";
+            }, 2000);
+          } else {
+            alert("Please verify your email first.");
+            auth.signOut();
+          }
+        })
+        .catch((error) => alert(error.message));
+    }
+
+    function googleSignIn() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .then(() => {
+          showSuccessPopup();
+          setTimeout(() => {
+            window.location.href = "https://akgamer737.github.io/Movie/";
+          }, 2000);
+        })
+        .catch((error) => alert(error.message));
+    }
+
+    function resetPassword() {
+      const email = document.getElementById("reset-email").value;
+
+      auth.sendPasswordResetEmail(email)
+        .then(() => alert("Password reset email sent."))
+        .catch((error) => alert(error.message));
+    }
+
+    function showSuccessPopup() {
+      const popup = document.getElementById("success-popup");
+      popup.style.display = "block";
+      setTimeout(() => {
+        popup.style.display = "none";
+      }, 2000);
+    }
+  </script>
+</body>
+</html>
